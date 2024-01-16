@@ -71,6 +71,8 @@ class JointProcessor(object):
         self.args = args
         self.intent_labels = get_intent_labels(args)
         self.slot_labels = get_slot_labels(args)
+        print(self.intent_labels)
+        print(self.slot_labels)
 
         self.input_text_file = 'seq.in'
         self.intent_label_file = 'label'
@@ -92,12 +94,15 @@ class JointProcessor(object):
             guid = "%s-%s" % (set_type, i)
             # 1. input_text
             words = text.split()  # Some are spaced twice
+            print(f'words:\n{words}')
             # 2. intent
             intent_label = self.intent_labels.index(intent) if intent in self.intent_labels else self.intent_labels.index("UNK")
+            print(f'intent_label:\n{intent_label}')
             # 3. slot
             slot_labels = []
             for s in slot.split():
                 slot_labels.append(self.slot_labels.index(s) if s in self.slot_labels else self.slot_labels.index("UNK"))
+            print(f'slots:\n{slot_labels}')
 
             assert len(words) == len(slot_labels)
             examples.append(InputExample(guid=guid, words=words, intent_label=intent_label, slot_labels=slot_labels))
@@ -118,7 +123,8 @@ class JointProcessor(object):
 
 processors = {
     "atis": JointProcessor,
-    "snips": JointProcessor
+    "snips": JointProcessor,
+    "kaiji": JointProcessor,
 }
 
 
@@ -253,3 +259,45 @@ def load_and_cache_examples(args, tokenizer, mode):
     dataset = TensorDataset(all_input_ids, all_attention_mask,
                             all_token_type_ids, all_intent_label_ids, all_slot_labels_ids)
     return dataset
+
+
+if __name__ == '__main__':
+    import argparse
+    from transformers import BertConfig, DistilBertConfig, AlbertConfig
+    from transformers import BertTokenizer, DistilBertTokenizer, AlbertTokenizer
+    from model import JointBERT, JointDistilBERT, JointAlbert
+    from utils import load_tokenizer
+
+    MODEL_CLASSES = {
+        'bert': (BertConfig, JointBERT, BertTokenizer),
+        'distilbert': (DistilBertConfig, JointDistilBERT, DistilBertTokenizer),
+        'albert': (AlbertConfig, JointAlbert, AlbertTokenizer)
+    }
+
+    MODEL_PATH_MAP = {
+        'bert': 'bert-base-uncased',
+        'distilbert': 'distilbert-base-uncased',
+        'albert': 'albert-xxlarge-v1'
+    }
+
+    parser = argparse.ArgumentParser()
+
+    # atis / snips / ...
+    parser.add_argument("--task", default=None, required=True, type=str, help="The name of the task to train")
+    parser.add_argument("--data_dir", default="./data", type=str, help="The input data dir")
+    # data_dir/task/intent_label_file
+    parser.add_argument("--intent_label_file", default="intent_label.txt", type=str, help="Intent Label file")
+    # data_dir/task/slot_label_file
+    parser.add_argument("--slot_label_file", default="slot_label.txt", type=str, help="Slot Label file")
+    # bert
+    parser.add_argument("--model_type", default="bert", type=str, help="Model type selected in the list: " + ", ".join(MODEL_CLASSES.keys()))
+    parser.add_argument("--max_seq_len", default=50, type=int, help="The maximum total input sequence length after tokenization.")
+    parser.add_argument("--ignore_index", default=0, type=int,
+                        help='Specifies a target value that is ignored and does not contribute to the input gradient')
+
+    args = parser.parse_args()
+
+    args.model_name_or_path = MODEL_PATH_MAP[args.model_type]
+
+    tokenizer = load_tokenizer(args)
+    dataset = load_and_cache_examples(args, tokenizer, mode='test')

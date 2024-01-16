@@ -14,13 +14,19 @@ from model import JointBERT, JointDistilBERT, JointAlbert
 MODEL_CLASSES = {
     'bert': (BertConfig, JointBERT, BertTokenizer),
     'distilbert': (DistilBertConfig, JointDistilBERT, DistilBertTokenizer),
-    'albert': (AlbertConfig, JointAlbert, AlbertTokenizer)
+    'albert': (AlbertConfig, JointAlbert, AlbertTokenizer),
+    'bertcn': (BertConfig, JointBERT, BertTokenizer),
+    'cnbert-wwm': (BertConfig, JointBERT, BertTokenizer),
+    'cnbert-wwm-ext': (BertConfig, JointBERT, BertTokenizer),
 }
 
 MODEL_PATH_MAP = {
     'bert': 'bert-base-uncased',
     'distilbert': 'distilbert-base-uncased',
-    'albert': 'albert-xxlarge-v1'
+    'albert': 'albert-xxlarge-v1',
+    'bertcn': 'bert-base-chinese',
+    'cnbert-wwm': 'hfl/chinese-bert-wwm',
+    'cnbert-wwm-ext': 'hfl/chinese-bert-wwm-ext',
 }
 
 
